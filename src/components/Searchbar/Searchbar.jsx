@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -9,54 +9,45 @@ import {
   StyledSearchIcon,
 } from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    searchQuery: '',
-  };
+export const Searchbar = ({ handleSearch }) => {
+  const [searchQuery, setSearchQuery] = useState('');
 
   // контрольований інпут
-  handleInputChange = e => {
-    const { name, value } = e.currentTarget;
-    this.setState({
-      [name]: value,
-    });
+  const handleInputChange = e => {
+    setSearchQuery(e.currentTarget.value);
   };
 
-  reset = () => {
-    this.setState({ searchQuery: '' });
-  };
-
-  handleFormSubmit = e => {
+  const handleFormSubmit = e => {
     e.preventDefault();
 
     //заборона вводу порожнього рядка
-    if (this.state.searchQuery.trim() === '') {
+    if (searchQuery.trim() === '') {
       toast.info('Enter a search name!');
       return;
     }
 
-    this.props.handleSearch(this.state.searchQuery.trim());
-    this.reset();
+    handleSearch(searchQuery.trim());
+    // очищуємо форму
+    setSearchQuery('');
   };
 
-  render() {
-    return (
-      <StyledSearchbar>
-        <StyledSearchForm onSubmit={this.handleFormSubmit}>
-          <StyledSearchInput
-            type="text"
-            autoComplete="off"
-            name="searchQuery"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.searchQuery}
-            onChange={this.handleInputChange}
-          />
-          <StyledSearchBtn type="submit">
-            <StyledSearchIcon />
-          </StyledSearchBtn>
-        </StyledSearchForm>
-      </StyledSearchbar>
-    );
-  }
-}
+  return (
+    <StyledSearchbar>
+      <StyledSearchForm onSubmit={handleFormSubmit}>
+        <StyledSearchInput
+          type="text"
+          autoComplete="off"
+          name="searchQuery"
+          autoFocus
+          placeholder="Search images and photos"
+          value={searchQuery}
+          onChange={handleInputChange}
+        />
+        <StyledSearchBtn type="submit">
+          <StyledSearchIcon />
+        </StyledSearchBtn>
+      </StyledSearchForm>
+    </StyledSearchbar>
+  );
+};
+
