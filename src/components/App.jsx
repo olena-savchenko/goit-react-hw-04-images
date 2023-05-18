@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { getImages } from 'service/api';
 import { ImageGallery } from './ImageGallery/ImageGallery';
@@ -15,23 +15,27 @@ const ERROR_MSG = 'Something was wrong, please try again!';
 const INFO_MSG =
   'You just entered this search name. Click the "LoadMore" button below';
 
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    images: [],
-    page: 1,
-    total: 0,
-    loading: false, //флаг для лоадера
-    showModal: false, // флаг показати / сховати модалку
-  };
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const isLoadMore = total / 12 > page;
 
-  async componentDidUpdate(prevProps, prevState) {
-    const { searchQuery, page } = this.state;
+ 
+  useEffect(() => {
+    // початкове значення searchQuery: '', useEffect перший раз при монтуванні компонента здійснює запит з порожнім рядком
+    // забороняємо це перевіркою на не пустий рядок.
+    if (!searchQuery) {
+      return;
+    }
 
-    // якщо змінився пошуковий запит, або номер сторінки
-    if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
+    async function getData() {
       try {
-        this.setState({ loading: true }); // для завантаження лоадера
+        setLoading(true); //для завантаження лоадера
 
         // запит на pixabay-api
         const data = await getImages(searchQuery, page);
@@ -41,92 +45,73 @@ export class App extends Component {
           return toast.info(WARNING_MSG);
         }
 
-        this.setState(prevState => ({
-          images: [...prevState.images, ...images],
-          page: prevState.page,
-          total: data.total,
-        }));
+        page === 1
+          ? setImages(images)
+          : setImages(prevState => [...prevState, ...images]);
+
+        setTotal(data.total);
       } catch (error) {
         toast.error(ERROR_MSG);
       } finally {
-        this.setState({ loading: false });
+        setLoading(false);
       }
     }
-  }
+    getData();
+  }, [searchQuery, page]);
 
-  // передаємо значення пошукового запиту при сабміті форми з класу Searchbar в state App,
-  // якщо попередній і новий запит не співпадають,
-  // для кожного нового запиту очищується масив картинок, page=1
+  // передаємо значення пошукового запиту при сабміті форми з класу Searchbar
+  const handleSearch = searchName => {
+    // якщо пошукове слово нового і попереднього запиту співпадають, виходимо повідомлення
+    if (searchName === searchQuery) {
+     return toast.info(INFO_MSG);
+    }
 
-  handleSearch = searchQuery => {
-    this.setState(prevState => {
-      // if (prevState.searchQuery !== searchQuery) {
-      //   return { searchQuery, images: [], page: 1, total: 0, loading: false };
-      // } else {
-      //   toast.info(INFO_MSG);
-      // }
-
-      if (prevState.searchQuery === searchQuery) {
-        toast.info(INFO_MSG);
-        console.log('Повторний ввод пошукового слова');
-        return;
-      }
-
-      return { searchQuery, images: [], page: 1, total: 0, loading: false };
-    });
+    setSearchQuery(searchName);
+    setPage(1);
   };
+
+   const onClickLoadMore = () => {
+     setPage(prevState => prevState + 1);
+   };
+
 
   // міняє значення showModal в state на протилежне
-  toggleModal = (largeImageURL, alt) => {
-    this.setState(prevState => ({
-      showModal: !prevState.showModal,
-      largeImageURL,
-      alt,
-    }));
+  const toggleModal = (largeImageURL) => {
+    setShowModal(!showModal);
+    setLargeImageURL(largeImageURL);
   };
 
-  // викликається при натисканні кнопки "Load more".
-  onClickLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
 
-  render() {
-    const { showModal, images, largeImageURL, alt, loading, total, page } =
-      this.state;
-    const isLoadMore = total / 12 > page;
+  return (
+    <StyledApp>
+      {/* serchForm */}
+      <Searchbar handleSearch={handleSearch} />
 
-    return (
-      <StyledApp>
-        {/* serchForm */}
-        <Searchbar handleSearch={this.handleSearch} />
+      {/* Контейнер для повідомлень про помилку запиту */}
+      <ToastContainer autoClose={3000} transition={Flip} position="right" />
 
-        {/* Контейнер для повідомлень про помилку запиту */}
-        <ToastContainer autoClose={3000} transition={Flip} position="right" />
+      {/* Loader */}
+      {loading && (
+        <StyledLoader>
+          <Loader />
+        </StyledLoader>
+      )}
 
-        {/* Loader */}
-        {loading && (
-          <StyledLoader>
-            <Loader />
-          </StyledLoader>
-        )}
+      {/* ImageGallery */}
+      <ImageGallery images={images} toggleModal={toggleModal} />
 
-        {/* ImageGallery */}
-        <ImageGallery images={images} toggleModal={this.toggleModal} />
+      {/* LoadMore button */}
+      {isLoadMore && (
+        <Button onClickLoadMore={onClickLoadMore}>load more</Button>
+      )}
 
-        {/* LoadMore button */}
-        {isLoadMore && (
-          <Button onClickLoadMore={this.onClickLoadMore}>load more</Button>
-        )}
+      {/* рендер модалки по умові */}
+      {showModal && (
+        <Modal onCloseModal={toggleModal}>
+          {<img src={largeImageURL} alt={searchQuery} loading="lazy" />}
+        </Modal>
+      )}
+    </StyledApp>
+  );
+};
 
-        {/* рендер модалки по умові */}
-        {showModal && (
-          <Modal onCloseModal={this.toggleModal}>
-            {<img src={largeImageURL} alt={alt} loading="lazy" />}
-          </Modal>
-        )}
-      </StyledApp>
-    );
-  }
-}

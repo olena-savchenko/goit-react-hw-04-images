@@ -11,4 +11,5 @@ export const Button = ({ children, onClickLoadMore }) => {
 
 Button.propTypes = {
   onClickLoadMore: PropTypes.func.isRequired,
+  children: PropTypes.any.isRequired,
 };
