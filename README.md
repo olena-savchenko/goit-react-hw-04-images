@@ -1,1 +1,1 @@
-###Homework#3
+### Simple "Image finder" App
