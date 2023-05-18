@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -51,3 +52,7 @@ export const Searchbar = ({ handleSearch }) => {
   );
 };
 
+
+Searchbar.propTypes = {
+  handleSearch: PropTypes.func.isRequired
+};

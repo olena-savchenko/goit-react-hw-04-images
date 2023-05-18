@@ -10,6 +10,7 @@ import { StyledLoader } from './Loader/Loader.styled';
 import { toast, ToastContainer, Flip } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// глобальні змінні для попереджень
 const WARNING_MSG = 'Sorry, there are no images matching your search query';
 const ERROR_MSG = 'Something was wrong, please try again!';
 const INFO_MSG =
@@ -23,7 +24,7 @@ export const App = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [largeImageURL, setLargeImageURL] = useState('');
-  const isLoadMore = total / 12 > page;
+  
 
  
   useEffect(() => {
@@ -39,12 +40,15 @@ export const App = () => {
 
         // запит на pixabay-api
         const data = await getImages(searchQuery, page);
+        // масив з об'єктами картинок
         const images = data.hits;
 
+        // якщо запит повернув порожній масив(нічого не знайдено), виводимо повідомлення
         if (images.length === 0) {
           return toast.info(WARNING_MSG);
         }
 
+        // якщо перша сторінка, перезаписуємо масив картинок, якщо не перша, додаємо до попередніх
         page === 1
           ? setImages(images)
           : setImages(prevState => [...prevState, ...images]);
@@ -59,6 +63,7 @@ export const App = () => {
     getData();
   }, [searchQuery, page]);
 
+
   // передаємо значення пошукового запиту при сабміті форми з класу Searchbar
   const handleSearch = searchName => {
     // якщо пошукове слово нового і попереднього запиту співпадають, виходимо повідомлення
@@ -70,6 +75,8 @@ export const App = () => {
     setPage(1);
   };
 
+
+  // при onClick LoadMoreButton блільшуємо сторінку + 1 
    const onClickLoadMore = () => {
      setPage(prevState => prevState + 1);
    };
@@ -81,6 +88,8 @@ export const App = () => {
     setLargeImageURL(largeImageURL);
   };
 
+  // константа для перевірки чи показувати кнопку LoadMore
+  const isLoadMore = total / 12 > page;
 
   return (
     <StyledApp>
